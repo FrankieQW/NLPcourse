@@ -1,0 +1,17 @@
+{
+  "train_count": 2000,
+  "val_count": 369,
+  "invalid": [],
+  "duplicates": {
+    "train-218": "train-106",
+    "train-487": "train-277",
+    "train-713": "train-676",
+    "train-951": "train-940",
+    "train-970": "train-937",
+    "train-1340": "train-1269",
+    "train-1350": "train-1277",
+    "train-1376": "train-1304",
+    "train-1437": "train-1311",
+    "train-1706": "train-1572"
+  }
+}

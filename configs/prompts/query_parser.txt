@@ -1,0 +1,1 @@
+将用户的中文搜图请求解析为 JSON：raw_text、objects、actions、scene、mood、colors、style、required_terms、excluded_terms。所有分类字段均为字符串数组。识别“不要、排除、没有”等否定条件并放入 excluded_terms。只输出 JSON。

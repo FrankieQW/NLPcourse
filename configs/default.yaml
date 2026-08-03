@@ -1,0 +1,32 @@
+project_root: .
+data:
+  train_dir: Train
+  val_dir: Val
+  artifacts_dir: artifacts
+models:
+  qwen_vl: Qwen--Qwen3-VL-2B-Instruct/snapshots/master
+  stable_diffusion: stablediffusion
+  embedder: models/bge-small-zh-v1.5
+annotation:
+  prompt: configs/prompts/caption_verified.txt
+  prompt_version: caption_verified_v1
+  max_new_tokens: 1024
+  temperature: 0.1
+  retries: 2
+retrieval:
+  candidate_count: 50
+  rerank_count: 10
+  result_count: 8
+  rrf_k: 60
+  rrf_weight: 0.35
+  vlm_weight: 0.65
+generation:
+  width: 512
+  height: 512
+  steps: 30
+  guidance_scale: 7.5
+  seed: 20260802
+runtime:
+  device: cuda
+  dtype: float16
+seed: 20260802
