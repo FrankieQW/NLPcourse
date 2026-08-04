@@ -629,6 +629,3 @@ pixi run python scripts\launch_app.py --split val
 ```
 
 完整设计、阶段门禁、风险和课程交付建议见 [plan.md](plan.md)。
-```
-pixi add --pypi torch torchvision accelerate diffusers faiss-cpu gradio jieba matplotlib numpy pandas pillow pydantic pytest pyyaml rank-bm25 scikit-learn sentence-transformers seaborn transformers modelscope
-```
