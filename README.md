@@ -127,7 +127,67 @@ E:\programs\Anima\Val\*.jpg
 
 不要把 Val 图片加入训练对。代码在 `build_training_pairs()` 中会拒绝 `split != "Train"` 的标注。
 
-## 5. 创建环境
+## 5. 创建环境（Pixi 或 Mamba 二选一）
+
+不要同时使用 Pixi 和 Mamba 安装同一套依赖。你可以选择下面任意一种环境管理方式；环境创建完成后，后续命令只使用对应的命令前缀。
+
+### 5.1 使用 Mamba（`mamba install` 方案）
+
+Windows 上建议先安装 [Miniforge](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html)。Miniforge 会同时提供 `conda` 和 `mamba`，并默认使用 `conda-forge`。安装完成后，重新打开 **Miniforge Prompt** 或 PowerShell。
+
+确认 Mamba 可用：
+
+```powershell
+mamba --version
+```
+
+创建独立的 Python 3.11 环境：
+
+```powershell
+mamba create -n anima python=3.11 pip -c conda-forge
+mamba activate anima
+```
+
+使用 Mamba 安装能从 conda-forge 获取的基础依赖：
+
+```powershell
+mamba install -n anima -c conda-forge `
+  numpy=1.26 pillow pyyaml pydantic pandas scikit-learn `
+  matplotlib seaborn jieba faiss-cpu pytest
+```
+
+使用 PyTorch 官方 Conda channel 安装 CUDA 版 PyTorch：
+
+```powershell
+mamba install -n anima -c pytorch -c nvidia pytorch torchvision pytorch-cuda=12.4
+```
+
+激活环境后安装需要较新版本或在 Windows 上更容易通过 PyPI 获取的 Python 包：
+
+```powershell
+python -m pip install --upgrade `
+  "transformers>=4.57,<5" "accelerate>=1,<2" "diffusers>=0.35,<1" `
+  "sentence-transformers>=3,<6" "gradio>=5,<7" "rank-bm25>=0.2,<1" modelscope
+```
+
+确认当前命令使用的是 Mamba 环境：
+
+```powershell
+where.exe python
+python --version
+python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
+```
+
+在 Mamba 环境中，后续所有命令都直接使用 `python`：
+
+```powershell
+python scripts\build_manifest.py --config configs\default.yaml
+python scripts\annotate_images.py --config configs\default.yaml --split Train --limit 10
+```
+
+如果某个包在 conda-forge 中无法解析，保留 Mamba 安装的 PyTorch、CUDA、FAISS 和基础科学计算包，再用上面的 `python -m pip install` 补装该包。不要在 `base` 环境中安装项目依赖。
+
+### 5.2 使用 Pixi
 
 打开 PowerShell：
 
@@ -162,7 +222,7 @@ pixi run python --version
 pixi run python -c "import torch; print(torch.__version__); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
 ```
 
-本项目所有命令都采用以下形式：
+本项目所有 Pixi 命令都采用以下形式：
 
 ```powershell
 pixi run python scripts\脚本名.py 参数
@@ -172,6 +232,15 @@ pixi run python scripts\脚本名.py 参数
 
 ```powershell
 python scripts\脚本名.py 参数
+```
+
+**Mamba 用户请跳过所有 `pixi install` 命令。** 激活 `anima` 环境后，将后文每条命令中的 `pixi run python` 替换为 `python`；例如：
+
+```powershell
+mamba activate anima
+python scripts\build_manifest.py --config configs\default.yaml
+python scripts\build_indexes.py --config configs\default.yaml --split Val
+python scripts\launch_app.py --config configs\default.yaml --split val
 ```
 
 ## 6. 修改统一配置
