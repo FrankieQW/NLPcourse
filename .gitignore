@@ -10,6 +10,7 @@ artifacts/indexes/
 artifacts/checkpoints/
 artifacts/generated/
 artifacts/cache/
+artifacts/m1/
 models/
 Qwen--Qwen3-VL-2B-Instruct/
 stablediffusion

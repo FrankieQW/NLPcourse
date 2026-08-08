@@ -1,0 +1,30 @@
+project_root: .
+
+m1:
+  prompt_file: deliver/prompt_v1.md
+  annotation_schema: deliver/annotation_payload.schema.json
+  candidate_schema: deliver/candidate_record.schema.json
+
+  data:
+    source_manifest: artifacts/manifests/train.jsonl
+    smoke_ids_file: configs/m1_smoke_ids.txt
+    processed_images_dir: artifacts/m1/shared/images/img-v1
+    smoke_manifest: artifacts/m1/shared/images_smoke.jsonl
+    max_pixels: 1310720  # 1280 * 32 * 32
+
+  model:
+    model_id: Qwen/Qwen3-VL-8B-Instruct
+    model_path: models/Qwen3-VL-8B-Instruct
+    local_files_only: true
+    dtype: bfloat16
+    device_map: auto
+    attention_implementation: flash_attention_2
+    min_pixels: 262144   # 256 * 32 * 32
+    max_pixels: 1310720  # 1280 * 32 * 32
+    batch_size: 8
+    max_new_tokens: 4096
+
+  output:
+    candidates: artifacts/m1/local_run/train/candidates_local.jsonl
+    raw_dir: artifacts/m1/local_run/train/raw
+    run_summary: artifacts/m1/local_run/train/run_summary.json

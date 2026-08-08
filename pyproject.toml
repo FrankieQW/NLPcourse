@@ -6,6 +6,21 @@ build-backend = "setuptools.build_meta"
 name = "anima-search"
 version = "0.1.0"
 requires-python = ">=3.11,<3.12"
+dependencies = [
+    "jsonschema>=4.25,<5",
+    "pillow>=12,<13",
+    "pydantic>=2.13,<3",
+    "pyyaml>=6,<7",
+    "referencing>=0.36,<1",
+]
+
+[project.optional-dependencies]
+m1-local = [
+    "accelerate>=1.14,<2",
+    "torch>=2.8",
+    "torchvision>=0.23",
+    "transformers>=5,<6",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

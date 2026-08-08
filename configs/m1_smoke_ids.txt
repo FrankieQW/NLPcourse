@@ -1,0 +1,3 @@
+# Replace these comments with exactly 12 unique image IDs from
+# artifacts/manifests/train.jsonl, one ID per line. Review the images manually
+# so the set covers the 12 categories required by deliver/README.md.
