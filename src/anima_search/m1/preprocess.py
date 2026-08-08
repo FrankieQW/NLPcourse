@@ -121,6 +121,60 @@ def prepare_smoke_images(
     return prepared
 
 
+def prepare_full_split(
+    source_manifest_path: str | Path,
+    split: str,
+    project_root: str | Path,
+    output_images_dir: str | Path,
+    output_manifest_path: str | Path,
+    max_pixels: int,
+) -> list[M1ImageItem]:
+    if split not in {"train", "val"}:
+        raise ValueError(f"Unsupported split: {split}")
+    root = Path(project_root).resolve()
+    source_records = load_source_manifest(source_manifest_path)
+    expected_source_split = "Train" if split == "train" else "Val"
+    selected = [
+        item
+        for item in source_records.values()
+        if item.split == expected_source_split and item.valid
+    ]
+    if not selected:
+        raise ValueError(f"No valid {expected_source_split} images found in source manifest")
+
+    output_dir = Path(output_images_dir)
+    output_dir = output_dir if output_dir.is_absolute() else root / output_dir
+    output_manifest = Path(output_manifest_path)
+    output_manifest = output_manifest if output_manifest.is_absolute() else root / output_manifest
+    prepared: list[M1ImageItem] = []
+    for source in selected:
+        source_path = root / source.relative_path
+        if sha256_file(source_path) != source.sha256:
+            raise ValueError(
+                f"Source image SHA-256 does not match the source manifest: {source.image_id}"
+            )
+        destination = output_dir / f"{_safe_filename(source.image_id)}.jpg"
+        width, height = preprocess_image(source_path, destination, max_pixels)
+        prepared.append(M1ImageItem(
+            image_id=source.image_id,
+            split=split,
+            source_path=source.relative_path,
+            source_sha256=source.sha256,
+            processed_path=destination.relative_to(root).as_posix(),
+            processed_sha256=sha256_file(destination),
+            width=width,
+            height=height,
+            preprocess_version=PREPROCESS_VERSION,
+        ))
+
+    output_manifest.parent.mkdir(parents=True, exist_ok=True)
+    output_manifest.write_text(
+        "\n".join(item.model_dump_json() for item in prepared) + "\n",
+        encoding="utf-8",
+    )
+    return prepared
+
+
 def load_m1_manifest(path: str | Path) -> list[M1ImageItem]:
     items: list[M1ImageItem] = []
     seen: set[str] = set()

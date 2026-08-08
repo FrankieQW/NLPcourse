@@ -27,7 +27,7 @@ deliver/candidate_record.schema.json
 
 程序会从 `prompt_v1.md` 原样提取 System Prompt 和 User Prompt。模型只生成 `annotation`，客户端再添加图片 hash、模型 ID、状态和原始响应路径，最终每张图片在 `candidates_local.jsonl` 中占一行。
 
-当前门禁只允许 12 张 Train smoke 图片，Val 不进入本阶段。
+推荐先完成 12 张 Train smoke 门禁，再进入完整 Train 和 Val。代码也支持显式使用 `--mode full` 跳过 smoke，但这样会失去小样本格式、显存和吞吐检查。
 
 ### M1.1 A100 服务器环境
 
@@ -148,6 +148,8 @@ artifacts/m1/shared/images/img-v1/*.jpg
 ```bash
 python scripts/annotate_m1_local.py \
   --config configs/m1_local.yaml \
+  --mode smoke \
+  --split train \
   --limit 1 \
   --batch-size 1
 ```
@@ -161,6 +163,8 @@ A100 80GB 上建议从 batch size 8 开始：
 ```bash
 python scripts/annotate_m1_local.py \
   --config configs/m1_local.yaml \
+  --mode smoke \
+  --split train \
   --batch-size 8
 ```
 
@@ -179,7 +183,51 @@ visual pixel budget: 256-1280 × 32 × 32
 
 这些参数都集中在 `configs/m1_local.yaml`。不要修改 `deliver/prompt_v1.md` 或两个 Schema 来适配模型输出。
 
-### M1.8 输出文件
+### M1.8 运行完整 Train 和 Val
+
+smoke 通过后，运行完整 Train：
+
+```bash
+pixi run python scripts/annotate_m1_local.py \
+  --mode full \
+  --split train \
+  --batch-size 8
+```
+
+然后单独运行完整 Val：
+
+```bash
+pixi run python scripts/annotate_m1_local.py \
+  --mode full \
+  --split val \
+  --batch-size 8
+```
+
+如果对应的全量处理 manifest 不存在，标注脚本会先自动完成统一预处理。也可以提前显式运行预处理：
+
+```bash
+pixi run python scripts/prepare_m1_dataset.py --split train
+pixi run python scripts/prepare_m1_dataset.py --split val
+```
+
+全量处理 manifest 分别位于：
+
+```text
+artifacts/m1/shared/train/images.jsonl
+artifacts/m1/shared/val/images.jsonl
+```
+
+`--mode full` 也支持 `--limit N`，可在正式全量运行前额外进行较大的吞吐探针。例如：
+
+```bash
+pixi run python scripts/annotate_m1_local.py \
+  --mode full \
+  --split train \
+  --limit 100 \
+  --batch-size 8
+```
+
+### M1.9 输出文件
 
 ```text
 artifacts/m1/local_run/train/
@@ -189,16 +237,31 @@ artifacts/m1/local_run/train/
     train-14.attempt-01.txt
     train-105.attempt-01.txt
     ...
+
+artifacts/m1/local_run/val/
+  candidates_local.jsonl
+  run_summary.json
+  raw/
+    val-12.attempt-01.txt
+    ...
 ```
 
 `candidates_local.jsonl` 是汇总文件，不是每张图片一个 JSONL。每张图在文件中占一行，格式严格遵守 `deliver/candidate_record.schema.json`。模型原始文本才按图片分别保存在 `raw/` 中，包括无法解析或校验失败的响应。
 
-当前阶段不会生成 Val 候选。未来扩大任务时应把 Train 和 Val 分别写入不同目录，不能混合在同一 JSONL 中。
+Train 和 Val 始终写入不同目录，不会混合在同一 JSONL 中。smoke 与完整 Train 共用 Train 输出；由于处理规则相同，已经成功的 smoke 记录会在完整 Train 运行中自动跳过。
 
-### M1.9 校验结果
+### M1.10 校验结果
 
 ```bash
 python scripts/validate_m1_candidates.py --config configs/m1_local.yaml
+```
+
+上面的默认命令校验 Train。校验 Val 时覆盖输入路径：
+
+```bash
+python scripts/validate_m1_candidates.py \
+  --config configs/m1_local.yaml \
+  --input artifacts/m1/local_run/val/candidates_local.jsonl
 ```
 
 校验内容包括：
@@ -213,12 +276,16 @@ python scripts/validate_m1_candidates.py --config configs/m1_local.yaml
 
 程序不会猜测或自动修改事实。严格 JSON、Schema 或语义校验失败时，保留原始响应，并写入 `status="failed"`、`annotation=null` 和明确的 `error`。
 
-### M1.10 断点续跑
+### M1.11 断点续跑
 
 直接重新执行相同命令即可：
 
 ```bash
-python scripts/annotate_m1_local.py --config configs/m1_local.yaml --batch-size 8
+python scripts/annotate_m1_local.py \
+  --config configs/m1_local.yaml \
+  --mode full \
+  --split train \
+  --batch-size 8
 ```
 
 默认情况下，已经存在且 `processed_sha256` 一致的 succeeded/failed 记录都会跳过。如果要重新处理失败记录，同时保留成功记录，运行：
@@ -226,6 +293,8 @@ python scripts/annotate_m1_local.py --config configs/m1_local.yaml --batch-size 
 ```bash
 python scripts/annotate_m1_local.py \
   --config configs/m1_local.yaml \
+  --mode full \
+  --split train \
   --batch-size 8 \
   --retry-failed
 ```

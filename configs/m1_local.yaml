@@ -28,3 +28,19 @@ m1:
     candidates: artifacts/m1/local_run/train/candidates_local.jsonl
     raw_dir: artifacts/m1/local_run/train/raw
     run_summary: artifacts/m1/local_run/train/run_summary.json
+
+  full:
+    train:
+      source_manifest: artifacts/manifests/train.jsonl
+      processed_images_dir: artifacts/m1/shared/train/images/img-v1
+      manifest: artifacts/m1/shared/train/images.jsonl
+      candidates: artifacts/m1/local_run/train/candidates_local.jsonl
+      raw_dir: artifacts/m1/local_run/train/raw
+      run_summary: artifacts/m1/local_run/train/run_summary.json
+    val:
+      source_manifest: artifacts/manifests/val.jsonl
+      processed_images_dir: artifacts/m1/shared/val/images/img-v1
+      manifest: artifacts/m1/shared/val/images.jsonl
+      candidates: artifacts/m1/local_run/val/candidates_local.jsonl
+      raw_dir: artifacts/m1/local_run/val/raw
+      run_summary: artifacts/m1/local_run/val/run_summary.json

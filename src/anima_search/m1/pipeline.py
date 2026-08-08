@@ -123,6 +123,7 @@ def annotate_local_items(
     batch_size: int,
     max_new_tokens: int,
     retry_failed: bool = False,
+    expected_split: str | None = None,
 ) -> dict[str, Any]:
     if batch_size < 1:
         raise ValueError("batch_size must be at least 1")
@@ -138,8 +139,14 @@ def annotate_local_items(
     summary_path.parent.mkdir(parents=True, exist_ok=True)
 
     requested_items = list(items)
-    if any(item.split != "train" for item in requested_items):
-        raise ValueError("Current M1 scope only permits Train items")
+    item_splits = {item.split for item in requested_items}
+    if len(item_splits) > 1:
+        raise ValueError("One annotation run may only contain one split")
+    actual_split = next(iter(item_splits), expected_split)
+    if expected_split is not None and actual_split != expected_split:
+        raise ValueError(
+            f"Manifest split {actual_split!r} does not match requested split {expected_split!r}"
+        )
     existing = _load_existing_candidates(output, validators)
     if retry_failed:
         retained = {
@@ -233,6 +240,7 @@ def annotate_local_items(
 
     summary = {
         "source_kind": "local",
+        "split": actual_split,
         "model_id": client.model_id,
         "model_path": str(client.model_path),
         "model_digest": client.model_digest,
